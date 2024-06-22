@@ -166,33 +166,10 @@ public class BluetoothMiScale2 extends BluetoothCommunication {
 
                 // Is the year plausible? Check if the year is in the range of 20 years...
                 if (validateDate(date_time, 20)) {
-                    final ScaleUser scaleUser = OpenScale.getInstance().getSelectedScaleUser();
                     ScaleMeasurement scaleBtData = new ScaleMeasurement();
 
-                    scaleBtData.setWeight(Converters.toKilogram(weight, scaleUser.getScaleUnit()));
+                    scaleBtData.setWeight(1.0f);
                     scaleBtData.setDateTime(date_time);
-
-                    int sex;
-
-                    if (scaleUser.getGender() == Converters.Gender.MALE) {
-                        sex = 1;
-                    } else {
-                        sex = 0;
-                    }
-
-                    Timber.i("|%s|%b|%s|", weight, isImpedance, impedance);
-                    if (impedance != 0.0f) {
-                        MiScaleLib miScaleLib = new MiScaleLib(sex, scaleUser.getAge(), scaleUser.getBodyHeight());
-
-                        scaleBtData.setWater(miScaleLib.getWater(weight, impedance));
-                        scaleBtData.setVisceralFat(miScaleLib.getVisceralFat(weight));
-                        scaleBtData.setFat(miScaleLib.getBodyFat(weight, impedance));
-                        scaleBtData.setMuscle((100.0f / weight) * miScaleLib.getMuscle(weight, impedance)); // convert muscle in kg to percent
-                        scaleBtData.setLbm(miScaleLib.getLBM(weight, impedance));
-                        scaleBtData.setBone(miScaleLib.getBoneMass(weight, impedance));
-                    } else {
-                        Timber.d("Impedance value is zero");
-                    }
 
                     addScaleMeasurement(scaleBtData);
                 } else {
