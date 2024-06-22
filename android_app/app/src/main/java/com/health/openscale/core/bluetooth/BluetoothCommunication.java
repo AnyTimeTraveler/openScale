@@ -599,9 +599,9 @@ public abstract class BluetoothCommunication {
             @Override
             public void run() {
                 Timber.d("Timeout Bluetooth disconnect");
-                disconnect();
+                reConnectPreviousPeripheral(callbackBtHandler);
             }
-        }, 60000); // 60s timeout
+        }, 10000); // 60s timeout
     }
 
     private synchronized void nextMachineStep() {
