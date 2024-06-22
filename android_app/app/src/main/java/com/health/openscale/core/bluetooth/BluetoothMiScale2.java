@@ -180,6 +180,7 @@ public class BluetoothMiScale2 extends BluetoothCommunication {
                         sex = 0;
                     }
 
+                    Timber.i("|%s|%b|%s|", weight, isImpedance, impedance);
                     if (impedance != 0.0f) {
                         MiScaleLib miScaleLib = new MiScaleLib(sex, scaleUser.getAge(), scaleUser.getBodyHeight());
 
