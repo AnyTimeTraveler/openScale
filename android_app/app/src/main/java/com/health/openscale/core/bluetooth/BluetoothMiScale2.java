@@ -160,7 +160,6 @@ public class BluetoothMiScale2 extends BluetoothCommunication {
                     impedance = ((data[10] & 0xFF) << 8) | (data[9] & 0xFF);
                     Timber.d("impedance value is " + impedance);
                 }
-                Timber.i("SCALE READER|%f|%b|%f|", weight, isImpedance, impedance);
 
                 String date_string = year + "/" + month + "/" + day + "/" + hours + "/" + min + "/" + sec;
                 Date date_time = new SimpleDateFormat("yyyy/MM/dd/HH/mm/ss").parse(date_string);
@@ -172,6 +171,7 @@ public class BluetoothMiScale2 extends BluetoothCommunication {
                     scaleBtData.setWeight(1.0f);
                     scaleBtData.setDateTime(date_time);
 
+                    Timber.i("SCALE READER|%s|%f|%b|%f|", date_string, weight, isImpedance, impedance);
                     addScaleMeasurement(scaleBtData);
                 } else {
                     Timber.e("Invalid Mi scale weight year %d", year);
