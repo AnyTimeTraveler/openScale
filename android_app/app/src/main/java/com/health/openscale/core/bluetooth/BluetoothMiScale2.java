@@ -1,18 +1,18 @@
 /* Copyright (C) 2014  olie.xdev <olie.xdev@googlemail.com>
- *
- *    This program is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation, either version 3 of the License, or
- *    (at your option) any later version.
- *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with this program.  If not, see <http://www.gnu.org/licenses/>
- */
+*
+*    This program is free software: you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation, either version 3 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*    You should have received a copy of the GNU General Public License
+*    along with this program.  If not, see <http://www.gnu.org/licenses/>
+*/
 
 package com.health.openscale.core.bluetooth;
 
@@ -67,7 +67,7 @@ public class BluetoothMiScale2 extends BluetoothCommunication {
                 // acknowledge that you received the last history data
                 int uniqueNumber = getUniqueNumber();
 
-                byte[] userIdentifier = new byte[]{(byte) 0x04, (byte) 0xFF, (byte) 0xFF, (byte) ((uniqueNumber & 0xFF00) >> 8), (byte) ((uniqueNumber & 0xFF) >> 0)};
+                byte[] userIdentifier = new byte[]{(byte)0x04, (byte)0xFF, (byte)0xFF, (byte) ((uniqueNumber & 0xFF00) >> 8), (byte) ((uniqueNumber & 0xFF) >> 0)};
                 writeBytes(BluetoothGattUuid.SERVICE_BODY_COMPOSITION, WEIGHT_MEASUREMENT_HISTORY_CHARACTERISTIC, userIdentifier);
 
                 resumeMachineState();
@@ -87,20 +87,20 @@ public class BluetoothMiScale2 extends BluetoothCommunication {
             case 0:
                 // set scale units
                 final ScaleUser selectedUser = OpenScale.getInstance().getSelectedScaleUser();
-                byte[] setUnitCmd = new byte[]{(byte) 0x06, (byte) 0x04, (byte) 0x00, (byte) selectedUser.getScaleUnit().toInt()};
+                byte[] setUnitCmd = new byte[]{(byte)0x06, (byte)0x04, (byte)0x00, (byte) selectedUser.getScaleUnit().toInt()};
                 writeBytes(WEIGHT_CUSTOM_SERVICE, WEIGHT_CUSTOM_CONFIG, setUnitCmd);
                 break;
             case 1:
                 // set current time
                 Calendar currentDateTime = Calendar.getInstance();
                 int year = currentDateTime.get(Calendar.YEAR);
-                byte month = (byte) (currentDateTime.get(Calendar.MONTH) + 1);
-                byte day = (byte) currentDateTime.get(Calendar.DAY_OF_MONTH);
-                byte hour = (byte) currentDateTime.get(Calendar.HOUR_OF_DAY);
-                byte min = (byte) currentDateTime.get(Calendar.MINUTE);
-                byte sec = (byte) currentDateTime.get(Calendar.SECOND);
+                byte month = (byte)(currentDateTime.get(Calendar.MONTH)+1);
+                byte day = (byte)currentDateTime.get(Calendar.DAY_OF_MONTH);
+                byte hour = (byte)currentDateTime.get(Calendar.HOUR_OF_DAY);
+                byte min = (byte)currentDateTime.get(Calendar.MINUTE);
+                byte sec = (byte)currentDateTime.get(Calendar.SECOND);
 
-                byte[] dateTimeByte = {(byte) (year), (byte) (year >> 8), month, day, hour, min, sec, 0x03, 0x00, 0x00};
+                byte[] dateTimeByte = {(byte)(year), (byte)(year >> 8), month, day, hour, min, sec, 0x03, 0x00, 0x00};
 
                 writeBytes(BluetoothGattUuid.SERVICE_BODY_COMPOSITION, BluetoothGattUuid.CHARACTERISTIC_CURRENT_TIME, dateTimeByte);
                 break;
@@ -112,7 +112,7 @@ public class BluetoothMiScale2 extends BluetoothCommunication {
                 // configure scale to get only last measurements
                 int uniqueNumber = getUniqueNumber();
 
-                byte[] userIdentifier = new byte[]{(byte) 0x01, (byte) 0xFF, (byte) 0xFF, (byte) ((uniqueNumber & 0xFF00) >> 8), (byte) ((uniqueNumber & 0xFF) >> 0)};
+                byte[] userIdentifier = new byte[]{(byte)0x01, (byte)0xFF, (byte)0xFF, (byte) ((uniqueNumber & 0xFF00) >> 8), (byte) ((uniqueNumber & 0xFF) >> 0)};
                 writeBytes(BluetoothGattUuid.SERVICE_BODY_COMPOSITION, WEIGHT_MEASUREMENT_HISTORY_CHARACTERISTIC, userIdentifier);
                 break;
             case 4:
@@ -161,17 +161,41 @@ public class BluetoothMiScale2 extends BluetoothCommunication {
                     Timber.d("impedance value is " + impedance);
                 }
 
-                String date_string = year + "/" + month + "/" + day + "/" + hours + "/" + min + "/" + sec;
-                Date date_time = new SimpleDateFormat("yyyy/MM/dd/HH/mm/ss").parse(date_string);
+                String date_string = year + "/" + month + "/" + day + "/" + hours + "/" + min;
+                Date date_time = new SimpleDateFormat("yyyy/MM/dd/HH/mm").parse(date_string);
 
                 // Is the year plausible? Check if the year is in the range of 20 years...
                 if (validateDate(date_time, 20)) {
+                    final ScaleUser scaleUser = OpenScale.getInstance().getSelectedScaleUser();
                     ScaleMeasurement scaleBtData = new ScaleMeasurement();
 
-                    scaleBtData.setWeight(1.0f);
+                    scaleBtData.setWeight(Converters.toKilogram(weight, scaleUser.getScaleUnit()));
                     scaleBtData.setDateTime(date_time);
 
-                    Timber.i("SCALE READER|%s|%f|%b|%f|", date_string, weight, isImpedance, impedance);
+                    int sex;
+
+                    if (scaleUser.getGender() == Converters.Gender.MALE) {
+                        sex = 1;
+                    } else {
+                        sex = 0;
+                    }
+
+                    Timber.i("|%s|%s|",weight, impedance);
+                    if (impedance != 0.0f) {
+                        MiScaleLib miScaleLib = new MiScaleLib(sex, scaleUser.getAge(), scaleUser.getBodyHeight());
+
+                        scaleBtData.setWater(miScaleLib.getWater(weight, impedance));
+                        scaleBtData.setVisceralFat(miScaleLib.getVisceralFat(weight));
+                        scaleBtData.setFat(miScaleLib.getBodyFat(weight, impedance));
+                        scaleBtData.setMuscle((100.0f / weight) * miScaleLib.getMuscle(weight, impedance)); // convert muscle in kg to percent
+                        scaleBtData.setLbm(miScaleLib.getLBM(weight, impedance));
+                        scaleBtData.setBone(miScaleLib.getBoneMass(weight, impedance));
+                        scaleBtData.setComment("yes impedance");
+                    } else {
+                        Timber.d("Impedance value is zero");
+                        scaleBtData.setComment("no impedance");
+                    }
+
                     addScaleMeasurement(scaleBtData);
                 } else {
                     Timber.e("Invalid Mi scale weight year %d", year);
